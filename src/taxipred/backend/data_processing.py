@@ -1,18 +1,15 @@
 from taxipred.utils.constants import TAXI_CLEANED_CSV
 import pandas as pd
 import json
-import os
 
-df = pd.read_csv(TAXI_CLEANED_CSV / "taxi_cleaned_training_data.csv")
 
 FEATURES = ["Trip_Distance_km", "Trip_Duration_Minutes", "Time_of_Day", "Passenger_Count"]
 TARGET = "Trip_Price"
 
 class TaxiData: 
     def __init__(self, path: str = TAXI_CLEANED_CSV):
-        if not os.path.exists(path):
-            raise FileNotFoundError(f"Missing data file: {path} (set TAXI_CLEANED_CSV)")
-        self.path = path
+        if not path.exists():
+            raise FileNotFoundError(f"Missing data file: {path}")
         self.df = pd.read_csv(path)
 
         for c in [*FEATURES, TARGET]:
@@ -34,7 +31,7 @@ class TaxiData:
             df = df[df["Time_of_Day"] == time_of_day]
 
         total = len(df)
-        offset, limit = max(0, int(offset)), max(1, min(int(limit)), 500)
+        offset, limit = max(0, int(offset)), max(1, min(int(limit), 500))
         df = df.iloc[offset : offset + limit]
 
         if columns: 
@@ -63,8 +60,8 @@ class TaxiData:
         return pd.DataFrame([{
             "Trip_Distance_km": float(Trip_Distance_km),
             "Trip_Duration_Minutes": float(Trip_Duration_Minutes),
-            "Tiem_of_Day": float(Time_of_Day),
             "Passenger_Count": float(Passenger_Count),
+            "Time_of_Day": str(Time_of_Day).strip(),
         }])
             
 
