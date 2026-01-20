@@ -2,14 +2,25 @@ import streamlit as st
 import httpx
 import folium
 from streamlit_folium import st_folium
-import os
+import polyline
+
+if "route_latlon" not in st.session_state:
+    st.session_state.route_latlon = None
+if "route_summary" not in st.session_state:
+    st.session_state.route_summary = None
+if "route_A" not in st.session_state:
+    st.session_state.route_A = None
+if "route_B" not in st.session_state:
+    st.session_state.route_B = None
+
 
 # -------- Config ---------
 st.set_page_config(page_title="Taxi Price Prediction", page_icon="🚕", layout="wide")
 
+ORS_KEY = st.secrets.get("ORS_API_KEY", "")
 API_BASE = st.sidebar.text_input("API base URL", "http://127.0.0.1:8000").rstrip("/")
 
-ORS_KEY = os.getenv("ORS_API_KEY", "")
+
 
 
 # ------- Helpers ----------
@@ -91,53 +102,84 @@ with tab_predict:
 with tab_route:
     st.subheader("Point A -> Point B")
 
-    if not ORS_KEY:
-        st.info("Set ORS_API_KEy to show route on map")
-        st.stop()
-
     A = st.text_input("Point A", "Stockholm Centralstation")
     B = st.text_input("Point B", "Arlanda Airport")
 
-    def geocode(q):
+    if not ORS_KEY:
+        st.info("Set ORS_API_KEy to show route on map")
+        st.code('export ORS_API_Key="DIN_NYCKEL_HAR')
+        st.stop()
+
+    def geocode(q: str):
         r = httpx.get(
             "https://api.openrouteservice.org/geocode/search",
-            params={"api_key": ORS_KEY, "text": q, "size": 1},
+            params={"api_key": ORS_KEY, "text": q, "size": 1, "boundary.country": "SE"},
             timeout=15,
         )
         r.raise_for_status()
-        f = r.json()["features"][0]
-        lon, lat = f["geometry"]["coordinates"]
-        return lat, lon, f["properties"]["label"]
+        js = r.json()
+        feats = js.get("features", [])
+        if not feats:
+            raise ValueError(f"No match for: {q}")
+        lon, lat = feats[0]["geometry"]["coordinates"]
+        label = feats[0]["properties"].get("label", q)
+        return lat, lon, label
 
     def route(a, b):
         r = httpx.post(
             "https://api.openrouteservice.org/v2/directions/driving-car",
-            headers={"Authorization": ORS_KEY},
-            json={"coordinates": [[a[1], a[0], b[1], b[0]]]},
+            headers={"Authorization": ORS_KEY, "Content-Type": "application/json"},
+            json={"coordinates": [[a[1], a[0]], [b[1], b[0]]]},
             timeout=20,
         )
         r.raise_for_status()
-        coords = r.json()["features"][0]["geometry"]["coordinates"]
-        return [(c[1], c[0]) for c in coords]
+        js = r.json()
+
+        if "routes" not in js or not js["routes"]:
+            raise ValueError(f"ORS directions error: {js}")
+        
+        summary = js["routes"][0]["summary"]
+        encoded = js["routes"][0]["geometry"]
+        latlon = polyline.decode(encoded)
+
+        return latlon, summary
 
     if st.button("SHOW ROUTE", type="primary"):
         A_geo, errA = safe(lambda: geocode(A))
         B_geo, errB = safe(lambda: geocode(B))
 
-        if errA or errB:
-            st.warning("Could not find any of the places.")
-            st.stop()
+        if errA:
+            st.warning(f"Could not find point A: {errA}")
+        elif errB:
+            st.warning(f"Could not find point B: {errB}")
+        else:
+            res, errR = safe(lambda: route(A_geo, B_geo))
+            if errR:
+                st.warning(f"Could not fetch route:{errR}")
+            else:
+                latlon, summary = res
+                st.session_state.route_latlon = latlon
+                st.session_state.route_summary = summary
+                st.session_state.route_A = A_geo
+                st.session_state.route_B = B_geo
+    
+    if st.session_state.route_latlon:
+        latlon = st.session_state.route_latlon
+        summary= st.session_state.route_summary
+        A_geo = st.session_state.route_A
+        B_geo = st.session_state.route_B
 
-        path, errR = safe(lambda: route(A_geo, B_geo))
-        if errR:
-            st.warning(f"Could not catch route: {errR}")
-            st.stop()
+        st.success(f"Distance: {summary['distance']/1000:.2f} km • Time: {summary['duration']/60:.0f} min")
 
-        m = folium.Map(location=path[0], zoom_start=11)
-        folium.Marker(A_geo[:2], tooltip="A").add_to(m)
-        folium.Marker(B_geo[:2], tooltip="B").add_to(m)
-        folium.PolyLine(path).add_to(m)
+        m = folium.Map(location=latlon[0], zoom_start=11)
+        folium.Marker(A_geo[:2], tooltip="A",  popup=A_geo[2]).add_to(m)
+        folium.Marker(B_geo[:2], tooltip="B", popup=B_geo[2]).add_to(m)
+        folium.PolyLine(latlon).add_to(m)
+        st_folium(m, height=520, use_container_width=True)
 
-        st_folium(m, height=500, use_container_width=True)
-
-st.caption("Swagger UI: /docs")
+        if st.button("Clear route"):
+            st.session_state.route_latlon = None
+            st.session_state.route_summary = None
+            st.session_state.route_A = None
+            st.session_state.route_B = None
+                
