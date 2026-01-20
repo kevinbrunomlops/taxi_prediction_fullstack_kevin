@@ -22,17 +22,20 @@ class PredictIn(BaseModel):
     Time_of_Day: TimeOfDay
     Passenger_Count: float = Field(..., ge=0)
 
+
 @app.get("/health")
 def health():
-    return{
-        "status" : "ok",
+    return {
+        "status": "ok",
         "rows": len(data.df),
         "model_path": str(MODEL_PATH),
     }
 
+
 @app.get("/data/sample")
 def sample(n: int = Query(10, ge=1, le=200)):
     return data.sample(n)
+
 
 @app.get("/data/rows")
 def rows(
@@ -44,13 +47,14 @@ def rows(
     cols = columns.split(",") if columns else None
     return data.rows(offset, limit, cols, time_of_day)
 
+
 @app.get("/data/stats")
 def stats():
     return data.stats()
 
 
 @app.post("/predict")
-def predict(x:PredictIn):
+def predict(x: PredictIn):
     try:
         X = data.make_X(
             x.Trip_Distance_km,
@@ -59,9 +63,10 @@ def predict(x:PredictIn):
             x.Passenger_Count,
         )
         return {"prediction": float(model.predict(X)[0])}
-    except Exception as e: 
+    except Exception as e:
         raise HTTPException(500, str(e))
-    
+
+
 @app.post("/predict/batch")
 def predicts_batch(items: list[PredictIn]):
     X = pd.DataFrame([i.model_dump() for i in items])
