@@ -3,13 +3,10 @@ Fullstack ML application for predicting taxi prices
 
 ### Swagger UI FastAPI
 ![Swagger](images/swagger_ui.png)
-
 ### Streamlit Taxi prediction
 ![Streamlit](images/taxi_prediction.png)
-
 ### Insert point A to B
 ![A to B](images/point_a_to_b.png)
-
 ### Map over route
 ![Map](images/map_of_route.png)
 
@@ -142,4 +139,5 @@ Streamlit was chosen for fast development and clear visualization without heavy 
 
 ## How to run the project
 In the backend for the swagger UI ```uv run uvicorn. api:app --reload```
+
 In the frontend for Streamlit ```uv run streamlit run app.py```
