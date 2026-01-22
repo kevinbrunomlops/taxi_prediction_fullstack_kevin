@@ -10,6 +10,7 @@ Fullstack ML application for predicting taxi prices
 ### Insert point A to B
 ![A to B](images/point_a_to_b.png)
 
+### Map over route
 ![Map](images/map_of_route.png)
 
 ## Project structure 
