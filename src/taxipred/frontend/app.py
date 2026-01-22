@@ -47,7 +47,7 @@ def safe(fn):
 st.title("Taxi Price App 🚕")
 st.caption("Minimal Streamlit-frontend that consumes FastAPI")
 
-# -------- Halth ---------
+# -------- Health ---------
 health, err = safe(lambda: get("/health"))
 if err:
     st.error(f"Could not connect with API: {err}")
@@ -93,7 +93,7 @@ with tab_predict:
         if err:
             st.warning(f"Prediction failed: {err}")
         else:
-            st.success(f"Predicted price: {result['prediction']:.2f}")
+            st.success(f"Predicted price: {result['prediction']:.2f}$")
 
 
 # =====================
