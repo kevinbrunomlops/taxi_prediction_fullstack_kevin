@@ -100,10 +100,22 @@ with tab_predict:
 #        ROUTE
 # =====================
 with tab_route:
-    st.subheader("Point A -> Point B")
+    st.subheader("Choose destination")
 
-    A = st.text_input("Point A", "Stockholm Centralstation")
-    B = st.text_input("Point B", "Arlanda Airport")
+    A = st.text_input("Point A", "From")
+    B = st.text_input("Point B", "To")
+
+    rc1, rc2 = st.columns(2)
+    with rc1:
+        route_passengers = st.number_input(
+            "Passenger_Count (route)", min_value=0, value=1, key="route_passengers"
+        )
+    with rc2:
+        route_tod = st.selectbox(
+            "Time_of_Day (route) ",
+            ["Morning", "Afternoon", "Evening", "Night"],
+            key="route_tod"
+        )
 
     if not ORS_KEY:
         st.info("Set ORS_API_KEy to show route on map")
@@ -170,6 +182,22 @@ with tab_route:
         B_geo = st.session_state.route_B
 
         st.success(f"Distance: {summary['distance']/1000:.2f} km • Time: {summary['duration']/60:.0f} min")
+
+        distance_km = summary["distance"] / 1000
+        duration_min = summary["duration"] / 60
+
+        payload = {
+            "Trip_Distance_km": float(distance_km),
+            "Trip_Duration_Minutes": float(duration_min),
+            "Time_of_Day": st.session_state.get("route_tod", "Morning"),
+            "Passenger_Count": int(st.session_state.get("route_passengers", 1)),
+        }
+
+        pred_res, pred_err = safe(lambda:post("/predict", payload))
+        if pred_err:
+            st.warning(f"Price prediction failed: {pred_err}")
+        else:
+            st.metric("Predicted price for this route", f"{pred_res['prediction']:.2f}$")
 
         m = folium.Map(location=latlon[0], zoom_start=11)
         folium.Marker(A_geo[:2], tooltip="A",  popup=A_geo[2]).add_to(m)
