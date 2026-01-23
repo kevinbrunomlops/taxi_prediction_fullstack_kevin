@@ -45,7 +45,7 @@ def safe(fn):
 
 # -------- Title --------
 st.title("Taxi Price App 🚕")
-st.caption("Minimal Streamlit-frontend that consumes FastAPI")
+st.caption("Streamlit-frontend that consumes FastAPI")
 
 # -------- Health ---------
 health, err = safe(lambda: get("/health"))
@@ -57,7 +57,7 @@ st.success("API succesfully connected")
 st.caption(f"Number of rows in dataset: {health.get('rows', '?')}")
 
 
-tab_predict, tab_route = st.tabs(["Predict 🔮", "Route 🗺️"])
+tab_route, tab_predict = st.tabs(["Route 🗺️", "Predict 🔮"])
 
 # ====================
 #       PREDICT
@@ -95,7 +95,6 @@ with tab_predict:
         else:
             st.success(f"Predicted price: {result['prediction']:.2f}$")
 
-
 # =====================
 #        ROUTE
 # =====================
@@ -108,18 +107,17 @@ with tab_route:
     rc1, rc2 = st.columns(2)
     with rc1:
         route_passengers = st.number_input(
-            "Passenger_Count (route)", min_value=0, value=1, key="route_passengers"
+            "Passenger_Count ", min_value=0, value=1, key="route_passengers"
         )
     with rc2:
         route_tod = st.selectbox(
-            "Time_of_Day (route) ",
+            "Time_of_Day ",
             ["Morning", "Afternoon", "Evening", "Night"],
             key="route_tod"
         )
 
     if not ORS_KEY:
-        st.info("Set ORS_API_KEy to show route on map")
-        st.code('export ORS_API_Key="DIN_NYCKEL_HAR')
+        st.error("ORS_API_KEY is missing")
         st.stop()
 
     def geocode(q: str):
@@ -211,3 +209,4 @@ with tab_route:
             st.session_state.route_A = None
             st.session_state.route_B = None
                 
+
