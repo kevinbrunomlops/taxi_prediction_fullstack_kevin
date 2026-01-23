@@ -8,7 +8,7 @@ Fullstack ML application for predicting taxi prices
 ### Insert point A to B
 ![A to B](images/point_a_to_b.png)
 ### Map over route
-![Map](images/map_of_route.png)
+![Map](images/map_of_route)
 
 ## Project structure 
 ```
@@ -31,15 +31,15 @@ TAXI_PREDICTION_FULLSTACK/
 │       │   │                  
 │       │
 │       ├── data/               
-│       │   └── taxi_trip_pricing.csv # Raw and cleaned data
+│       │   └── taxi_trip_pricing.csv # Raw data
 │       │
 │       ├── model_development/  # Model dev and analysis
 │       │   ├── eda.ipynb        # Exploratory Data Analysis
-│       │   ├── model_dev.ipynb  # Training and model
-│       │   ├── test_model.ipynb # Model testing och validation
+│       │   ├── model_dev.ipynb  # Training and model evaluation
+│       │   ├── test_model.ipynb # Model testing and validation
 │       │   ├── taxi_cleaned_train.csv
 │       │   ├── taxi_prediction_input.csv
-│       │   └── taxi_price_model.pkl
+│       │   └── taxi_price_model.joblib 
 │       │
 │       ├── utils/              
 │       │   ├── constants.py    # Constants and global settings
